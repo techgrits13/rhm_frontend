@@ -54,43 +54,68 @@ export default function App() {
   // Initialize app services and push notifications
   useEffect(() => {
     (async () => {
-      try {
-        // Initialize ads
-        if (!disableAds) {
+      // Initialize ads (non-blocking)
+      if (!disableAds) {
+        try {
           await initAds();
-          await showAppOpenAdIfEligible();
+          console.log('✅ Ads initialized');
+        } catch (error) {
+          console.warn('⚠️ Ads initialization failed (non-critical):', error);
         }
 
-        // Initialize push notifications
+        try {
+          await showAppOpenAdIfEligible();
+        } catch (error) {
+          console.warn('⚠️ App open ad failed (non-critical):', error);
+        }
+      }
+
+      // Initialize push notifications (non-blocking)
+      try {
         await pushNotificationService.initialize();
         console.log('✅ Push notifications initialized');
       } catch (error) {
-        console.error('Initialization error:', error);
+        console.warn('⚠️ Push notifications initialization failed (non-critical):', error);
       }
     })();
 
-    // Add notification listeners
-    const notificationListener = pushNotificationService.addNotificationReceivedListener(
-      (notification) => {
-        console.log('📬 Notification received:', notification);
-      }
-    );
+    // Add notification listeners (with error handling)
+    let notificationListener: any;
+    let responseListener: any;
 
-    const responseListener = pushNotificationService.addNotificationResponseListener(
-      (response) => {
-        console.log('👆 Notification tapped:', response);
-        const data = response.notification.request.content.data;
-
-        // Handle deep linking based on notification data
-        if (data?.screen === 'Home' && navigationRef.current) {
-          navigationRef.current.navigate('Home');
+    try {
+      notificationListener = pushNotificationService.addNotificationReceivedListener(
+        (notification) => {
+          console.log('📬 Notification received:', notification);
         }
-      }
-    );
+      );
+
+      responseListener = pushNotificationService.addNotificationResponseListener(
+        (response) => {
+          console.log('👆 Notification tapped:', response);
+          try {
+            const data = response.notification.request.content.data;
+
+            // Handle deep linking based on notification data
+            if (data?.screen === 'Home' && navigationRef.current) {
+              navigationRef.current.navigate('Home');
+            }
+          } catch (error) {
+            console.warn('⚠️ Deep linking failed:', error);
+          }
+        }
+      );
+    } catch (error) {
+      console.warn('⚠️ Notification listeners setup failed (non-critical):', error);
+    }
 
     return () => {
-      notificationListener.remove();
-      responseListener.remove();
+      try {
+        notificationListener?.remove();
+        responseListener?.remove();
+      } catch (error) {
+        console.warn('⚠️ Cleanup failed:', error);
+      }
     };
   }, []);
 

@@ -93,7 +93,8 @@ class PushNotificationService {
             });
             console.log('Push token registered with backend');
         } catch (error) {
-            console.error('Failed to register push token:', error);
+            console.warn('Failed to register push token with backend (will retry later):', error);
+            // Don't throw - this is non-critical, token is saved locally
         }
     }
 
