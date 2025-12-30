@@ -1,0 +1,43 @@
+import api from './api';
+
+export interface Video {
+  id: number;
+  video_id: string;
+  title: string;
+  description: string;
+  thumbnail_url: string;
+  published_at: string;
+  channel_id: string;
+  created_at: string;
+}
+
+export interface VideoResponse {
+  success: boolean;
+  count: number;
+  videos: Video[];
+  message?: string;
+}
+
+export const videoService = {
+  // Get all videos
+  getAllVideos: async (): Promise<VideoResponse> => {
+    try {
+      const response = await api.get<VideoResponse>('/videos');
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching videos:', error);
+      throw error;
+    }
+  },
+
+  // Get single video by ID
+  getVideoById: async (id: number): Promise<Video> => {
+    try {
+      const response = await api.get(`/videos/${id}`);
+      return response.data.video;
+    } catch (error) {
+      console.error('Error fetching video:', error);
+      throw error;
+    }
+  },
+};
