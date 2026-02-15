@@ -37,6 +37,24 @@ export default function MusicPlayerScreen() {
     const [isFavorite, setIsFavorite] = useState(false);
     const [loading, setLoading] = useState(true);
 
+    // Configure audio session for background playback
+    useEffect(() => {
+        const configureAudio = async () => {
+            try {
+                await Audio.setAudioModeAsync({
+                    allowsRecordingIOS: false,
+                    playsInSilentModeIOS: true,
+                    staysActiveInBackground: true,
+                    shouldDuckAndroid: true,
+                    playThroughEarpieceAndroid: false,
+                });
+            } catch (error) {
+                console.error('Audio configuration error:', error);
+            }
+        };
+        configureAudio();
+    }, []);
+
     // Load track info
     useEffect(() => {
         if (playlist.length > 0 && trackId) {
