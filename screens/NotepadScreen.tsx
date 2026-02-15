@@ -15,6 +15,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '../context/ThemeContext';
 import AdBanner from '../components/AdBanner';
 import { useNavigation } from '@react-navigation/native';
+import { safeGetJson } from '../utils/safeStorage';
 
 const NOTES_STORAGE_KEY = '@notes';
 
@@ -47,9 +48,8 @@ export default function NotepadScreen() {
   const fetchNotes = async () => {
     try {
       setLoading(true);
-      const stored = await AsyncStorage.getItem(NOTES_STORAGE_KEY);
-      const loadedNotes: Note[] = stored ? JSON.parse(stored) : [];
-      setNotes(loadedNotes.sort((a, b) => 
+      const loadedNotes = await safeGetJson<Note[]>(NOTES_STORAGE_KEY, []);
+      setNotes(loadedNotes.sort((a, b) =>
         new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
       ));
     } catch (error) {
@@ -91,8 +91,8 @@ export default function NotepadScreen() {
 
       if (editingNote) {
         // Update existing note
-        updatedNotes = notes.map(note => 
-          note.id === editingNote.id 
+        updatedNotes = notes.map(note =>
+          note.id === editingNote.id
             ? { ...note, title: noteTitle, content: noteContent, updated_at: now }
             : note
         );
@@ -277,7 +277,7 @@ export default function NotepadScreen() {
 
   // Setup header button
   const navigation = useNavigation();
-  
+
   useEffect(() => {
     navigation.setOptions({
       headerRight: () => (

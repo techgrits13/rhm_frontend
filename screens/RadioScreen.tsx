@@ -25,13 +25,22 @@ export default function RadioScreen() {
   const [recordingTimer, setRecordingTimer] = useState<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
-    Audio.setAudioModeAsync({
-      allowsRecordingIOS: false,
-      playsInSilentModeIOS: true,
-      staysActiveInBackground: true,
-      shouldDuckAndroid: true,
-      playThroughEarpieceAndroid: false,
-    });
+    // Configure audio session for background playback
+    const configureAudio = async () => {
+      try {
+        await Audio.setAudioModeAsync({
+          allowsRecordingIOS: false,
+          playsInSilentModeIOS: true,
+          staysActiveInBackground: true,
+          shouldDuckAndroid: true,
+          playThroughEarpieceAndroid: false,
+        });
+      } catch (error) {
+        console.error('Audio configuration error:', error);
+      }
+    };
+
+    configureAudio();
     fetchRadioInfo();
     fetchSlideshow();
 
@@ -57,7 +66,15 @@ export default function RadioScreen() {
       setRadioUrl(data.radioUrl);
       setStationName(data.station);
     } catch (error) {
-      Alert.alert('Error', 'Could not fetch radio information.');
+      console.error('Error fetching radio info:', error);
+      setStationName('Radio Stream');
+      // Set a fallback URL so user can still try to play
+      setRadioUrl('');
+      Alert.alert(
+        'Connection Error',
+        'Could not connect to server. Please check your network connection and ensure the backend is running.',
+        [{ text: 'OK' }]
+      );
     }
   };
 
@@ -90,6 +107,17 @@ export default function RadioScreen() {
           { uri: radioUrl },
           { shouldPlay: true }
         );
+
+        // Monitor playback status for interruptions
+        newSound.setOnPlaybackStatusUpdate((status) => {
+          if (status.isLoaded) {
+            // Handle interruptions (calls, alarms, etc.)
+            if (!status.isPlaying && !status.didJustFinish && isPlaying) {
+              console.log('Playback interrupted');
+            }
+          }
+        });
+
         setSound(newSound);
         setIsPlaying(true);
       } catch (error) {

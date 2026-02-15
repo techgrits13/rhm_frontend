@@ -17,6 +17,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { bibleService, BibleVerseResponse } from '../services/bibleService';
 import { useTheme } from '../context/ThemeContext';
 import AdBanner from '../components/AdBanner';
+import { safeGetJson } from '../utils/safeStorage';
 
 const SEARCH_HISTORY_KEY = '@bible_search_history';
 const HIGHLIGHTS_KEY = '@bible_highlights';
@@ -45,14 +46,8 @@ export default function BibleScreen() {
   }, []);
 
   const loadSearchHistory = async () => {
-    try {
-      const stored = await AsyncStorage.getItem(SEARCH_HISTORY_KEY);
-      if (stored) {
-        setSearchHistory(JSON.parse(stored));
-      }
-    } catch (error) {
-      console.error('Failed to load search history:', error);
-    }
+    const history = await safeGetJson<string[]>(SEARCH_HISTORY_KEY, []);
+    setSearchHistory(history);
   };
 
   const saveToHistory = async (ref: string) => {
@@ -75,19 +70,13 @@ export default function BibleScreen() {
   };
 
   const loadHighlights = async () => {
-    try {
-      const stored = await AsyncStorage.getItem(HIGHLIGHTS_KEY);
-      if (stored) {
-        setHighlights(JSON.parse(stored));
-      }
-    } catch (error) {
-      console.error('Failed to load highlights:', error);
-    }
+    const highlights = await safeGetJson<HighlightedText[]>(HIGHLIGHTS_KEY, []);
+    setHighlights(highlights);
   };
 
   const saveHighlight = async (text: string, color: string) => {
     if (!verseData) return;
-    
+
     try {
       const newHighlight: HighlightedText = {
         verseRef: verseData.reference,
@@ -146,7 +135,7 @@ export default function BibleScreen() {
 
   const handleTextSelection = () => {
     if (!verseData) return;
-    
+
     Alert.alert(
       'Highlight Text',
       'Choose a highlight color',

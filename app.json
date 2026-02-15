@@ -14,8 +14,14 @@
     },
     "ios": {
       "supportsTablet": true,
+      "backgroundModes": [
+        "audio"
+      ],
       "infoPlist": {
-        "NSUserTrackingUsageDescription": "This identifier will be used to deliver personalized ads to you."
+        "NSUserTrackingUsageDescription": "This identifier will be used to deliver personalized ads to you.",
+        "UIBackgroundModes": [
+          "audio"
+        ]
       }
     },
     "android": {

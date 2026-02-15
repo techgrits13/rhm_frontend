@@ -1,6 +1,7 @@
 import { Audio } from 'expo-av';
 import * as FileSystem from 'expo-file-system';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { safeGetJson } from '../utils/safeStorage';
 
 const RECORDINGS_DIR = `${FileSystem.documentDirectory}RHM_Recordings/`;
 const RECORDINGS_INDEX_KEY = '@recordings_index';
@@ -39,6 +40,14 @@ class RecordingService {
       // Request permissions
       const { granted } = await Audio.requestPermissionsAsync();
       if (!granted) {
+        // Reset audio mode before throwing to prevent bad state
+        await Audio.setAudioModeAsync({
+          allowsRecordingIOS: false,
+          playsInSilentModeIOS: true,
+          staysActiveInBackground: true,
+          shouldDuckAndroid: true,
+          playThroughEarpieceAndroid: false,
+        });
         throw new Error('Recording permission not granted');
       }
 
@@ -182,11 +191,7 @@ class RecordingService {
    */
   async getAllRecordings(): Promise<Recording[]> {
     try {
-      const indexJson = await AsyncStorage.getItem(RECORDINGS_INDEX_KEY);
-      if (!indexJson) {
-        return [];
-      }
-      const recordings: Recording[] = JSON.parse(indexJson);
+      const recordings = await safeGetJson<Recording[]>(RECORDINGS_INDEX_KEY, []);
 
       // Verify files still exist
       const validRecordings: Recording[] = [];

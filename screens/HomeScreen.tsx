@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useLayoutEffect } from 'react';
 import {
   View,
   Text,
@@ -9,20 +9,40 @@ import {
   RefreshControl,
   ActivityIndicator,
   Linking,
+  Modal,
+  TouchableWithoutFeedback
 } from 'react-native';
 import { videoService, Video } from '../services/videoService';
 import YoutubePlayer from 'react-native-youtube-iframe';
 import AdBanner from '../components/AdBanner';
+import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
 
 export default function HomeScreen() {
+  const navigation = useNavigation<any>();
   const [videos, setVideos] = useState<Video[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [playingVideoId, setPlayingVideoId] = useState<string | null>(null);
+  const [menuVisible, setMenuVisible] = useState(false);
 
   useEffect(() => {
     fetchVideos();
   }, []);
+
+  // Add Hamburger Menu to Header
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      headerRight: () => (
+        <TouchableOpacity
+          onPress={() => setMenuVisible(true)}
+          style={{ marginRight: 15 }}
+        >
+          <Ionicons name="menu" size={28} color="#fff" />
+        </TouchableOpacity>
+      ),
+    });
+  }, [navigation]);
 
   const fetchVideos = async () => {
     try {
@@ -125,15 +145,6 @@ export default function HomeScreen() {
     </View>
   );
 
-  if (loading) {
-    return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#6200ee" />
-        <Text style={styles.loadingText}>Loading videos...</Text>
-      </View>
-    );
-  }
-
   return (
     <View style={styles.container}>
       <FlatList
@@ -144,11 +155,60 @@ export default function HomeScreen() {
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
-        ListEmptyComponent={renderEmpty}
+        ListEmptyComponent={loading ? null : renderEmpty}
       />
+
+      {loading && (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#6200ee" />
+          <Text style={styles.loadingText}>Loading videos...</Text>
+        </View>
+      )}
+
       <View style={styles.adContainer}>
         <AdBanner />
       </View>
+
+      {/* Hamburger Menu Modal */}
+      <Modal
+        visible={menuVisible}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setMenuVisible(false)}
+      >
+        <TouchableWithoutFeedback onPress={() => setMenuVisible(false)}>
+          <View style={styles.modalOverlay}>
+            <View style={styles.menuContainer}>
+              <TouchableOpacity
+                style={styles.menuItem}
+                onPress={() => {
+                  setMenuVisible(false);
+                  navigation.navigate('BreakingNews');
+                }}
+              >
+                <Ionicons name="newspaper" size={24} color="#6200ee" />
+                <Text style={styles.menuText}>Breaking News</Text>
+              </TouchableOpacity>
+
+              <View style={styles.menuDivider} />
+
+              <TouchableOpacity
+                style={styles.menuItem}
+                onPress={() => {
+                  setMenuVisible(false);
+                  navigation.navigate('MusicList');
+                }}
+              >
+                <Ionicons name="musical-notes" size={24} color="#6200ee" />
+                <View>
+                  <Text style={styles.menuText}>Worship Songs 🎵</Text>
+                  <Text style={styles.menuSubtext}>Listen to latest uploads</Text>
+                </View>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </TouchableWithoutFeedback>
+      </Modal>
     </View>
   );
 }
@@ -217,10 +277,14 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   loadingContainer: {
-    flex: 1,
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#f5f5f5',
+    backgroundColor: 'rgba(255,255,255,0.8)',
   },
   loadingText: {
     marginTop: 12,
@@ -245,4 +309,46 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     paddingHorizontal: 40,
   },
+  // Menu Styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'flex-start',
+    alignItems: 'flex-end',
+    paddingTop: 50, // Below header
+    paddingRight: 10,
+  },
+  menuContainer: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 8,
+    width: 200,
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowRadius: 5,
+    shadowOffset: { width: 0, height: 2 },
+  },
+  menuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+  },
+  menuText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#333',
+    marginLeft: 12,
+  },
+  menuSubtext: {
+    fontSize: 12,
+    color: '#888',
+    marginLeft: 12,
+  },
+  menuDivider: {
+    height: 1,
+    backgroundColor: '#eee',
+    marginHorizontal: 8,
+  },
 });
+

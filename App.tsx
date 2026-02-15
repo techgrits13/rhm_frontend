@@ -5,13 +5,16 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
-import * as Notifications from 'expo-notifications';
 import { initAds } from './services/adsInit';
 import { showAppOpenAdIfEligible } from './services/appOpenManager';
-import { pushNotificationService } from './services/pushNotificationService';
 import { ThemeProvider } from './context/ThemeContext';
+import { NotificationProvider } from './context/NotificationContext';
 import Constants from 'expo-constants';
 import ErrorBoundary from './components/ErrorBoundary';
+import NotificationOverlay from './components/NotificationOverlay';
+import NotificationHandler from './components/NotificationHandler';
+import NotificationErrorBoundary from './components/NotificationErrorBoundary';
+import { registerForPushNotifications } from './services/notificationService';
 
 // Import screens
 import HomeScreen from './screens/HomeScreen';
@@ -20,9 +23,12 @@ import BibleScreen from './screens/BibleScreen';
 import NotepadScreen from './screens/NotepadScreen';
 import AboutScreen from './screens/AboutScreen';
 import RecordingsScreen from './screens/RecordingsScreen';
-
+import MusicListScreen from './screens/MusicListScreen';
+import MusicPlayerScreen from './screens/MusicPlayerScreen';
+import BreakingNewsScreen from './screens/BreakingNewsScreen';
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
+const RootStack = createNativeStackNavigator();
 
 // Radio Stack Navigator (includes Radio and Recordings)
 function RadioStack() {
@@ -47,14 +53,77 @@ function RadioStack() {
   );
 }
 
+// Main Tab Navigator
+function MainTabNavigator() {
+  return (
+    <Tab.Navigator
+      screenOptions={({ route }) => ({
+        tabBarIcon: ({ focused, color, size }) => {
+          let iconName: keyof typeof Ionicons.glyphMap;
+
+          if (route.name === 'Home') {
+            iconName = focused ? 'home' : 'home-outline';
+          } else if (route.name === 'Radio') {
+            iconName = focused ? 'radio' : 'radio-outline';
+          } else if (route.name === 'Bible') {
+            iconName = focused ? 'book' : 'book-outline';
+          } else if (route.name === 'Notepad') {
+            iconName = focused ? 'create' : 'create-outline';
+          } else if (route.name === 'About') {
+            iconName = focused ? 'information-circle' : 'information-circle-outline';
+          } else {
+            iconName = 'help-circle-outline';
+          }
+
+          return <Ionicons name={iconName} size={size} color={color} />;
+        },
+        tabBarActiveTintColor: '#6200ee',
+        tabBarInactiveTintColor: 'gray',
+        headerStyle: {
+          backgroundColor: '#6200ee',
+        },
+        headerTintColor: '#fff',
+        headerTitleStyle: {
+          fontWeight: 'bold',
+        },
+      })}
+    >
+      <Tab.Screen
+        name="Home"
+        component={HomeScreen}
+        options={{ title: 'Home' }}
+      />
+      <Tab.Screen
+        name="Radio"
+        component={RadioStack}
+        options={{ title: 'Radio', headerShown: false }}
+      />
+      <Tab.Screen
+        name="Bible"
+        component={BibleScreen}
+        options={{ title: 'Bible' }}
+      />
+      <Tab.Screen
+        name="Notepad"
+        component={NotepadScreen}
+        options={{ title: 'Notepad' }}
+      />
+      <Tab.Screen
+        name="About"
+        component={AboutScreen}
+        options={{ title: 'About' }}
+      />
+    </Tab.Navigator>
+  );
+}
+
 export default function App() {
   const disableAds = !!(Constants?.expoConfig?.extra as any)?.disableAds;
   const navigationRef = useRef<any>(null);
 
-  // Initialize app services and push notifications
+  // Initialize app services (ads only - NO notifications)
   useEffect(() => {
     (async () => {
-      // Initialize ads (non-blocking)
       if (!disableAds) {
         try {
           await initAds();
@@ -69,54 +138,19 @@ export default function App() {
           console.warn('⚠️ App open ad failed (non-critical):', error);
         }
       }
+    })();
+  }, []);
 
-      // Initialize push notifications (non-blocking)
+  // Initialize notifications
+  useEffect(() => {
+    (async () => {
       try {
-        await pushNotificationService.initialize();
-        console.log('✅ Push notifications initialized');
+        await registerForPushNotifications();
+        console.log('✅ Push notifications registered');
       } catch (error) {
-        console.warn('⚠️ Push notifications initialization failed (non-critical):', error);
+        console.warn('⚠️ Push notification registration failed (non-critical):', error);
       }
     })();
-
-    // Add notification listeners (with error handling)
-    let notificationListener: any;
-    let responseListener: any;
-
-    try {
-      notificationListener = pushNotificationService.addNotificationReceivedListener(
-        (notification) => {
-          console.log('📬 Notification received:', notification);
-        }
-      );
-
-      responseListener = pushNotificationService.addNotificationResponseListener(
-        (response) => {
-          console.log('👆 Notification tapped:', response);
-          try {
-            const data = response.notification.request.content.data;
-
-            // Handle deep linking based on notification data
-            if (data?.screen === 'Home' && navigationRef.current) {
-              navigationRef.current.navigate('Home');
-            }
-          } catch (error) {
-            console.warn('⚠️ Deep linking failed:', error);
-          }
-        }
-      );
-    } catch (error) {
-      console.warn('⚠️ Notification listeners setup failed (non-critical):', error);
-    }
-
-    return () => {
-      try {
-        notificationListener?.remove();
-        responseListener?.remove();
-      } catch (error) {
-        console.warn('⚠️ Cleanup failed:', error);
-      }
-    };
   }, []);
 
   // Handle app state changes for ads
@@ -133,67 +167,50 @@ export default function App() {
   return (
     <ErrorBoundary>
       <ThemeProvider>
-        <NavigationContainer ref={navigationRef}>
-          <StatusBar style="auto" />
-          <Tab.Navigator
-            screenOptions={({ route }) => ({
-              tabBarIcon: ({ focused, color, size }) => {
-                let iconName: keyof typeof Ionicons.glyphMap;
-
-                if (route.name === 'Home') {
-                  iconName = focused ? 'home' : 'home-outline';
-                } else if (route.name === 'Radio') {
-                  iconName = focused ? 'radio' : 'radio-outline';
-                } else if (route.name === 'Bible') {
-                  iconName = focused ? 'book' : 'book-outline';
-                } else if (route.name === 'Notepad') {
-                  iconName = focused ? 'create' : 'create-outline';
-                } else if (route.name === 'About') {
-                  iconName = focused ? 'information-circle' : 'information-circle-outline';
-                } else {
-                  iconName = 'help-circle-outline';
-                }
-
-                return <Ionicons name={iconName} size={size} color={color} />;
-              },
-              tabBarActiveTintColor: '#6200ee',
-              tabBarInactiveTintColor: 'gray',
-              headerStyle: {
-                backgroundColor: '#6200ee',
-              },
-              headerTintColor: '#fff',
-              headerTitleStyle: {
-                fontWeight: 'bold',
-              },
-            })}
-          >
-            <Tab.Screen
-              name="Home"
-              component={HomeScreen}
-              options={{ title: 'Home' }}
-            />
-            <Tab.Screen
-              name="Radio"
-              component={RadioStack}
-              options={{ title: 'Radio', headerShown: false }}
-            />
-            <Tab.Screen
-              name="Bible"
-              component={BibleScreen}
-              options={{ title: 'Bible' }}
-            />
-            <Tab.Screen
-              name="Notepad"
-              component={NotepadScreen}
-              options={{ title: 'Notepad' }}
-            />
-            <Tab.Screen
-              name="About"
-              component={AboutScreen}
-              options={{ title: 'About' }}
-            />
-          </Tab.Navigator>
-        </NavigationContainer>
+        <NotificationErrorBoundary>
+          <NotificationProvider>
+            <NotificationHandler />
+            <NavigationContainer ref={navigationRef}>
+              <StatusBar style="auto" />
+              <RootStack.Navigator>
+                <RootStack.Screen
+                  name="MainTabs"
+                  component={MainTabNavigator}
+                  options={{ headerShown: false }}
+                />
+                <RootStack.Screen
+                  name="MusicList"
+                  component={MusicListScreen}
+                  options={{
+                    title: 'Worship Songs',
+                    headerStyle: { backgroundColor: '#6200ee' },
+                    headerTintColor: '#fff',
+                  }}
+                />
+                <RootStack.Screen
+                  name="MusicPlayer"
+                  component={MusicPlayerScreen}
+                  options={{
+                    title: 'Now Playing',
+                    presentation: 'modal',
+                    headerStyle: { backgroundColor: '#6200ee' },
+                    headerTintColor: '#fff',
+                  }}
+                />
+                <RootStack.Screen
+                  name="BreakingNews"
+                  component={BreakingNewsScreen}
+                  options={{
+                    title: 'Breaking News',
+                    headerStyle: { backgroundColor: '#6200ee' },
+                    headerTintColor: '#fff',
+                  }}
+                />
+              </RootStack.Navigator>
+              <NotificationOverlay />
+            </NavigationContainer>
+          </NotificationProvider>
+        </NotificationErrorBoundary>
       </ThemeProvider>
     </ErrorBoundary>
   );

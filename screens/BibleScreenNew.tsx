@@ -48,7 +48,12 @@ export default function BibleScreen() {
     try {
       const stored = await AsyncStorage.getItem(SEARCH_HISTORY_KEY);
       if (stored) {
-        setSearchHistory(JSON.parse(stored));
+        try {
+          setSearchHistory(JSON.parse(stored));
+        } catch (parseError) {
+          console.error('JSON parse error:', parseError);
+          setSearchHistory([]);
+        }
       }
     } catch (error) {
       console.error('Failed to load search history:', error);
@@ -78,7 +83,12 @@ export default function BibleScreen() {
     try {
       const stored = await AsyncStorage.getItem(HIGHLIGHTS_KEY);
       if (stored) {
-        setHighlights(JSON.parse(stored));
+        try {
+          setHighlights(JSON.parse(stored));
+        } catch (parseError) {
+          console.error('JSON parse error:', parseError);
+          setHighlights([]);
+        }
       }
     } catch (error) {
       console.error('Failed to load highlights:', error);
@@ -87,7 +97,7 @@ export default function BibleScreen() {
 
   const saveHighlight = async (text: string, color: string) => {
     if (!verseData) return;
-    
+
     try {
       const newHighlight: HighlightedText = {
         verseRef: verseData.reference,
@@ -146,7 +156,7 @@ export default function BibleScreen() {
 
   const handleTextSelection = () => {
     if (!verseData) return;
-    
+
     Alert.alert(
       'Highlight Text',
       'Choose a highlight color',

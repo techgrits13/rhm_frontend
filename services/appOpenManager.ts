@@ -1,12 +1,12 @@
 import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { AppOpenAd, AdEventType } from 'react-native-google-mobile-ads';
 import { APP_OPEN_AD_UNIT_ID } from './ads';
 import Constants from 'expo-constants';
+import { safeGetJson } from '../utils/safeStorage';
 
 const STORAGE_KEY = '@ads_app_open_stats';
-const DAILY_LIMIT = 2; // max twice per day
-const MIN_INTERVAL_MS = 6 * 60 * 60 * 1000; // 6 hours
+const DAILY_LIMIT = 2; // Strict Policy: Max 2 shows per day
+const MIN_INTERVAL_MS = 6 * 60 * 60 * 1000; // Strict Policy: 6 hours between ads
 
 type Stats = {
   lastShownAt?: number;
@@ -25,36 +25,31 @@ async function canShow(): Promise<boolean> {
   const disableAds = !!(Constants?.expoConfig?.extra as any)?.disableAds;
   if (disableAds) return false;
   if (!APP_OPEN_AD_UNIT_ID) return false;
-  try {
-    const raw = await AsyncStorage.getItem(STORAGE_KEY);
-    const stats: Stats = raw ? JSON.parse(raw) : {};
-    const today = todayKey();
-    const count = stats.shownOnDay === today ? stats.count || 0 : 0;
-    if (count >= DAILY_LIMIT) return false;
-    if (stats.lastShownAt) {
-      const elapsed = Date.now() - stats.lastShownAt;
-      if (elapsed < MIN_INTERVAL_MS) return false;
-    }
-    return true;
-  } catch {
-    return true;
+
+  const stats = await safeGetJson<Stats>(STORAGE_KEY, {});
+  const today = todayKey();
+  const count = stats.shownOnDay === today ? stats.count || 0 : 0;
+  if (count >= DAILY_LIMIT) return false;
+  if (stats.lastShownAt) {
+    const elapsed = Date.now() - stats.lastShownAt;
+    if (elapsed < MIN_INTERVAL_MS) return false;
   }
+  return true;
 }
 
 async function recordShown() {
+  const stats = await safeGetJson<Stats>(STORAGE_KEY, {});
+  const today = todayKey();
+  const prevCount = stats.shownOnDay === today ? stats.count || 0 : 0;
+  const next: Stats = {
+    lastShownAt: Date.now(),
+    shownOnDay: today,
+    count: prevCount + 1,
+  };
   try {
-    const raw = await AsyncStorage.getItem(STORAGE_KEY);
-    const stats: Stats = raw ? JSON.parse(raw) : {};
-    const today = todayKey();
-    const prevCount = stats.shownOnDay === today ? stats.count || 0 : 0;
-    const next: Stats = {
-      lastShownAt: Date.now(),
-      shownOnDay: today,
-      count: prevCount + 1,
-    };
     await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(next));
   } catch {
-    // ignore
+    // Ignore save errors
   }
 }
 
@@ -65,6 +60,20 @@ export async function showAppOpenAdIfEligible(): Promise<boolean> {
 
   return new Promise<boolean>((resolve) => {
     loading = true;
+
+    // Dynamic import to avoid crash in Expo Go
+    let AppOpenAd: any;
+    let AdEventType: any;
+    try {
+      const mod = require('react-native-google-mobile-ads');
+      AppOpenAd = mod.AppOpenAd;
+      AdEventType = mod.AdEventType;
+    } catch (e) {
+      resolve(false);
+      loading = false;
+      return;
+    }
+
     const ad = AppOpenAd.createForAdRequest(APP_OPEN_AD_UNIT_ID!, {
       requestNonPersonalizedAdsOnly: false,
     });
@@ -88,8 +97,8 @@ export async function showAppOpenAdIfEligible(): Promise<boolean> {
 
     function cleanup() {
       loading = false;
-      onLoaded();
-      onError();
+      if (onLoaded) onLoaded(); // Check if function because dynamic
+      if (onError) onError();
     }
 
     try {
