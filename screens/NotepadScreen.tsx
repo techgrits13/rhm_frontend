@@ -37,6 +37,10 @@ export default function NotepadScreen() {
   const [noteContent, setNoteContent] = useState('');
   const [userId, setUserId] = useState('');
 
+  const [displayedNotes, setDisplayedNotes] = useState<Note[]>([]);
+  const [page, setPage] = useState(1);
+  const NOTES_PER_PAGE = 15;
+
   useEffect(() => {
     initializeUser();
   }, []);
@@ -49,14 +53,28 @@ export default function NotepadScreen() {
     try {
       setLoading(true);
       const loadedNotes = await safeGetJson<Note[]>(NOTES_STORAGE_KEY, []);
-      setNotes(loadedNotes.sort((a, b) =>
+      const sortedNotes = loadedNotes.sort((a, b) =>
         new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
-      ));
+      );
+      setNotes(sortedNotes);
+
+      // Initial slice
+      setDisplayedNotes(sortedNotes.slice(0, NOTES_PER_PAGE));
+      setPage(1);
     } catch (error) {
       console.error('Failed to fetch notes:', error);
     } finally {
       setLoading(false);
     }
+  };
+
+  const loadMore = () => {
+    if (displayedNotes.length >= notes.length) return;
+
+    const nextPage = page + 1;
+    const nextBatch = notes.slice(0, nextPage * NOTES_PER_PAGE);
+    setDisplayedNotes(nextBatch);
+    setPage(nextPage);
   };
 
   const openModal = (note?: Note) => {
@@ -273,6 +291,16 @@ export default function NotepadScreen() {
       color: colors.text,
       lineHeight: 24,
     },
+    footerLoader: {
+      paddingVertical: 20,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    footerText: {
+      fontSize: 12,
+      marginTop: 8,
+      color: '#666',
+    },
   });
 
   // Setup header button
@@ -333,11 +361,21 @@ export default function NotepadScreen() {
   return (
     <View style={styles.container}>
       <FlatList
-        data={notes}
+        data={displayedNotes}
         renderItem={renderNoteCard}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.listContent}
         ListEmptyComponent={renderEmpty}
+        onEndReached={loadMore}
+        onEndReachedThreshold={0.5}
+        ListFooterComponent={
+          displayedNotes.length < notes.length ? (
+            <View style={styles.footerLoader}>
+              <ActivityIndicator size="small" color={colors.primary} />
+              <Text style={styles.footerText}>Loading more notes...</Text>
+            </View>
+          ) : null
+        }
       />
 
       {/* Note Editor Modal */}

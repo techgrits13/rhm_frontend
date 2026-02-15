@@ -19,10 +19,40 @@ const PLAY_COUNTS_KEY = 'rhm_music_play_counts';
 export const musicService = {
     // Fetch all music
     getAllMusic: async (sort: 'az' | 'newest' = 'az') => {
-        const response = await api.get<MusicTrack[]>('/music', {
-            params: { sort: sort === 'newest' ? 'newest' : 'az' }
-        });
-        return response.data;
+        try {
+            const response = await api.get<MusicTrack[]>('/music', {
+                params: { sort: sort === 'newest' ? 'newest' : 'az' }
+            });
+            return response.data || [];
+        } catch (error) {
+            console.error('Failed to fetch music:', error);
+            return [];
+        }
+    },
+
+    // Fetch music with pagination (infinite scroll)
+    getMusicPaginated: async (params: {
+        limit?: number;
+        offset?: number;
+        sort?: 'az' | 'newest';
+    }) => {
+        try {
+            const response = await api.get<{ data: MusicTrack[]; total: number }>('/music', {
+                params: {
+                    limit: params.limit || 20,
+                    offset: params.offset || 0,
+                    sort: params.sort || 'az'
+                }
+            });
+            return {
+                data: response.data?.data || response.data || [],
+                total: response.data?.total || 0,
+                hasMore: (response.data?.data || response.data || []).length === (params.limit || 20)
+            };
+        } catch (error) {
+            console.error('Failed to fetch paginated music:', error);
+            return { data: [], total: 0, hasMore: false };
+        }
     },
 
     // Get favorites IDs

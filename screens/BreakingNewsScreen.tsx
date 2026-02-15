@@ -365,6 +365,15 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
     },
+    adContainer: {
+        backgroundColor: '#fff',
+        borderTopWidth: 1,
+        borderTopColor: '#ccc',
+        alignItems: 'center',
+        paddingVertical: 4,
+        marginTop: 10,
+        marginBottom: 32, // Lift up the ad
+    },
     list: { padding: 10, paddingBottom: 20 },
     card: {
         borderRadius: 12,
@@ -405,11 +414,4 @@ const styles = StyleSheet.create({
     reactionBtn: { padding: 6, borderRadius: 20 },
     reactionActive: { backgroundColor: 'rgba(25, 118, 210, 0.1)' },
     emoji: { fontSize: 22 },
-    adContainer: {
-        backgroundColor: '#fff',
-        borderTopWidth: 1,
-        borderTopColor: '#ccc',
-        alignItems: 'center',
-        paddingVertical: 4
-    }
 });

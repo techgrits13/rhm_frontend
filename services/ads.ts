@@ -33,10 +33,10 @@ const ANDROID_REAL: Partial<AdUnitSet> = {
 export const AD_UNITS: AdUnitSet = Platform.select<AdUnitSet>({
   ios: TEST_AD_UNITS.ios,
   android: {
-    banner: TEST_AD_UNITS.android.banner, // Use TEST ID
+    banner: ANDROID_REAL.banner!,
     interstitial: TEST_AD_UNITS.android.interstitial,
     rewarded: TEST_AD_UNITS.android.rewarded,
-    appOpen: TEST_AD_UNITS.android.appOpen, // Use TEST ID
+    appOpen: ANDROID_REAL.appOpen!,
   },
 }) as AdUnitSet;
 

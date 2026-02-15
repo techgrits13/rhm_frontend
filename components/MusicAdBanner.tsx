@@ -44,6 +44,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         width: '100%',
         marginVertical: 16,
+        marginBottom: 32, // Lift up the ad
         backgroundColor: 'rgba(0,0,0,0.05)', // Subtle background to mark ad space
         borderRadius: 8,
         overflow: 'hidden',

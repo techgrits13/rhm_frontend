@@ -13,51 +13,91 @@ import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { musicService, MusicTrack } from '../services/musicService';
 import MusicAdBanner from '../components/MusicAdBanner';
+import ScreenErrorBoundary from '../components/ScreenErrorBoundary';
 
 type SortOption = 'az' | 'most_played' | 'favorites';
 
-export default function MusicListScreen() {
+const ITEMS_PER_PAGE = 20;
+
+function MusicListContent() {
     const navigation = useNavigation<any>();
     const [tracks, setTracks] = useState<MusicTrack[]>([]);
     const [loading, setLoading] = useState(true);
+    const [loadingMore, setLoadingMore] = useState(false);
+    const [refreshing, setRefreshing] = useState(false);
     const [searchText, setSearchText] = useState('');
     const [sortBy, setSortBy] = useState<SortOption>('az');
     const [favorites, setFavorites] = useState<number[]>([]);
     const [playCounts, setPlayCounts] = useState<Record<string, number>>({});
+    const [hasMore, setHasMore] = useState(true);
+    const [offset, setOffset] = useState(0);
 
-    const loadData = async () => {
-        setLoading(true);
+    const loadInitialData = async () => {
         try {
-            const [allTracks, favs, counts] = await Promise.all([
-                musicService.getAllMusic(),
+            setLoading(true);
+            setOffset(0);
+
+            const [musicData, favs, counts] = await Promise.all([
+                musicService.getMusicPaginated({ limit: ITEMS_PER_PAGE, offset: 0, sort: 'az' }),
                 musicService.getFavorites(),
                 musicService.getPlayCounts()
             ]);
-            setTracks(allTracks);
-            setFavorites(favs);
-            setPlayCounts(counts);
+
+            setTracks(musicData.data || []);
+            setHasMore(musicData.hasMore);
+            setFavorites(favs || []);
+            setPlayCounts(counts || {});
+            setOffset(ITEMS_PER_PAGE);
         } catch (error) {
-            console.error(error);
+            console.error('Failed to load initial data:', error);
+            setTracks([]);
         } finally {
             setLoading(false);
         }
     };
 
+    const loadMore = async () => {
+        if (loadingMore || !hasMore || searchText) return;
+
+        try {
+            setLoadingMore(true);
+            const musicData = await musicService.getMusicPaginated({
+                limit: ITEMS_PER_PAGE,
+                offset,
+                sort: 'az'
+            });
+
+            setTracks(prev => [...prev, ...(musicData.data || [])]);
+            setHasMore(musicData.hasMore);
+            setOffset(prev => prev + ITEMS_PER_PAGE);
+        } catch (error) {
+            console.error('Failed to load more:', error);
+        } finally {
+            setLoadingMore(false);
+        }
+    };
+
+    const handleRefresh = async () => {
+        setRefreshing(true);
+        await loadInitialData();
+        setRefreshing(false);
+    };
+
     useFocusEffect(
         useCallback(() => {
-            loadData();
+            loadInitialData();
         }, [])
     );
 
-    const getSortedTracks = () => {
-        let filtered = tracks;
+    const getSortedTracks = useCallback(() => {
+        let filtered = [...tracks];
 
         // Filter by search
         if (searchText) {
             const lower = searchText.toLowerCase();
             filtered = filtered.filter(t =>
-                t.title.toLowerCase().includes(lower) ||
-                t.artist.toLowerCase().includes(lower)
+                t.title?.toLowerCase().includes(lower) ||
+                t.artist?.toLowerCase().includes(lower)
             );
         }
 
@@ -67,33 +107,36 @@ export default function MusicListScreen() {
                 const aFav = favorites.includes(a.id) ? 1 : 0;
                 const bFav = favorites.includes(b.id) ? 1 : 0;
                 if (aFav !== bFav) return bFav - aFav;
-                return a.title.localeCompare(b.title);
+                return (a.title || '').localeCompare(b.title || '');
             }
             if (sortBy === 'most_played') {
                 const aCount = playCounts[a.id] || 0;
                 const bCount = playCounts[b.id] || 0;
                 if (aCount !== bCount) return bCount - aCount;
-                return a.title.localeCompare(b.title);
+                return (a.title || '').localeCompare(b.title || '');
             }
             // Default A-Z
-            return a.title.localeCompare(b.title);
+            return (a.title || '').localeCompare(b.title || '');
         });
-    };
+    }, [tracks, searchText, sortBy, favorites, playCounts]);
 
-    const renderItem = ({ item }: { item: MusicTrack }) => {
+    const renderItem = useCallback(({ item }: { item: MusicTrack }) => {
+        if (!item || !item.id) return null;
+
         const isFav = favorites.includes(item.id);
         return (
             <TouchableOpacity
                 style={styles.card}
                 onPress={() => navigation.navigate('MusicPlayer', { trackId: item.id, playlist: getSortedTracks() })}
+                activeOpacity={0.7}
             >
                 <Image
                     source={item.cover_url ? { uri: item.cover_url } : require('../assets/icon.png')}
                     style={styles.cover}
                 />
                 <View style={styles.info}>
-                    <Text style={styles.title} numberOfLines={1}>{item.title}</Text>
-                    <Text style={styles.artist} numberOfLines={1}>{item.artist}</Text>
+                    <Text style={styles.title} numberOfLines={1}>{item.title || 'Unknown Title'}</Text>
+                    <Text style={styles.artist} numberOfLines={1}>{item.artist || 'Unknown Artist'}</Text>
                 </View>
                 <View style={styles.actions}>
                     {isFav && <Ionicons name="heart" size={16} color="red" style={{ marginRight: 8 }} />}
@@ -101,7 +144,24 @@ export default function MusicListScreen() {
                 </View>
             </TouchableOpacity>
         );
+    }, [favorites, navigation, getSortedTracks]);
+
+    const renderFooter = () => {
+        if (!loadingMore) return null;
+        return (
+            <View style={styles.footerLoader}>
+                <ActivityIndicator size="small" color="#6200ee" />
+                <Text style={styles.footerText}>Loading more songs...</Text>
+            </View>
+        );
     };
+
+    const renderEmpty = () => (
+        <View style={styles.emptyContainer}>
+            <Ionicons name="musical-notes-outline" size={64} color="#ccc" />
+            <Text style={styles.emptyText}>No music found</Text>
+        </View>
+    );
 
     return (
         <View style={styles.container}>
@@ -140,20 +200,37 @@ export default function MusicListScreen() {
             </View>
 
             {loading ? (
-                <ActivityIndicator size="large" color="#6200ee" style={{ marginTop: 20 }} />
+                <View style={styles.loadingContainer}>
+                    <ActivityIndicator size="large" color="#6200ee" />
+                </View>
             ) : (
                 <FlatList
                     data={getSortedTracks()}
-                    keyExtractor={item => item.id.toString()}
+                    keyExtractor={(item, index) => `${item.id}-${index}`}
                     renderItem={renderItem}
                     contentContainerStyle={styles.list}
-                    ListEmptyComponent={
-                        <Text style={styles.empty}>No music found.</Text>
-                    }
+                    ListEmptyComponent={renderEmpty}
+                    ListFooterComponent={renderFooter}
+                    onEndReached={loadMore}
+                    onEndReachedThreshold={0.5}
+                    refreshing={refreshing}
+                    onRefresh={handleRefresh}
+                    removeClippedSubviews={true}
+                    maxToRenderPerBatch={10}
+                    windowSize={10}
+                    initialNumToRender={20}
                 />
             )}
             <MusicAdBanner />
         </View>
+    );
+}
+
+export default function MusicListScreen() {
+    return (
+        <ScreenErrorBoundary>
+            <MusicListContent />
+        </ScreenErrorBoundary>
     );
 }
 
@@ -180,6 +257,33 @@ const styles = StyleSheet.create({
     filterText: { fontSize: 13, color: '#333' },
     filterTextActive: { color: '#fff', fontWeight: 'bold' },
     list: { padding: 16 },
+    // New styles
+    loadingContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    footerLoader: {
+        paddingVertical: 20,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    footerText: {
+        color: '#666',
+        fontSize: 12,
+        marginTop: 8,
+    },
+    emptyContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginTop: 50,
+    },
+    emptyText: {
+        marginTop: 16,
+        fontSize: 18,
+        color: '#666',
+    },
     card: {
         flexDirection: 'row',
         alignItems: 'center',

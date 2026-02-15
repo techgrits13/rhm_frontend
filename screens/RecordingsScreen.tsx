@@ -26,6 +26,10 @@ export default function RecordingsScreen() {
     const [editingId, setEditingId] = useState<string | null>(null);
     const [editTitle, setEditTitle] = useState('');
 
+    const [displayedRecordings, setDisplayedRecordings] = useState<Recording[]>([]);
+    const [page, setPage] = useState(1);
+    const MESSAGES_PER_PAGE = 15;
+
     useEffect(() => {
         loadRecordings();
         return () => {
@@ -38,6 +42,10 @@ export default function RecordingsScreen() {
             setLoading(true);
             const recs = await recordingService.getAllRecordings();
             setRecordings(recs);
+            // Initial slice
+            setDisplayedRecordings(recs.slice(0, MESSAGES_PER_PAGE));
+            setPage(1);
+
             const storage = await recordingService.getTotalStorageUsed();
             setTotalStorage(storage);
         } catch (error) {
@@ -46,6 +54,15 @@ export default function RecordingsScreen() {
         } finally {
             setLoading(false);
         }
+    };
+
+    const loadMore = () => {
+        if (displayedRecordings.length >= recordings.length) return;
+
+        const nextPage = page + 1;
+        const nextBatch = recordings.slice(0, nextPage * MESSAGES_PER_PAGE);
+        setDisplayedRecordings(nextBatch);
+        setPage(nextPage);
     };
 
     const playRecording = async (recording: Recording) => {
