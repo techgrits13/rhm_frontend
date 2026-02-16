@@ -44,7 +44,7 @@ export async function uploadBreakingNews(data: BreakingNewsUpload): Promise<{ su
             formData.append('poll_options_text', data.pollOptions.join('\n'));
         }
 
-        const response = await fetch(`${BACKEND_URL}/admin-ui/news/create`, {
+        const response = await fetch(`${BACKEND_URL}/api/mobile-admin/breaking-news`, {
             method: 'POST',
             body: formData,
             headers: {
@@ -92,7 +92,7 @@ export async function uploadMusicTrack(data: MusicUpload): Promise<{ success: bo
             } as any);
         }
 
-        const response = await fetch(`${BACKEND_URL}/admin-ui/music/upload`, {
+        const response = await fetch(`${BACKEND_URL}/api/mobile-admin/music`, {
             method: 'POST',
             body: formData,
             headers: {
