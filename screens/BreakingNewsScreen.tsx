@@ -26,7 +26,7 @@ const { width } = Dimensions.get('window');
 // Supabase client for realtime - using environment variables
 const supabaseUrl = Constants.expoConfig?.extra?.supabaseUrl || '';
 const supabaseKey = Constants.expoConfig?.extra?.supabaseAnonKey || '';
-const supabase = createClient(supabaseUrl, supabaseKey);
+const supabase = supabaseUrl && supabaseKey ? createClient(supabaseUrl, supabaseKey) : null;
 
 interface NewsItem {
     id: number;
@@ -81,13 +81,15 @@ export default function BreakingNewsScreen() {
         subscribeToRealtime();
 
         return () => {
-            if (channelRef.current) {
+            if (channelRef.current && supabase) {
                 supabase.removeChannel(channelRef.current);
             }
         };
     }, []);
 
     const subscribeToRealtime = () => {
+        if (!supabase) return;
+
         const channel = supabase
             .channel('breaking_news_changes')
             .on('postgres_changes',
@@ -136,15 +138,27 @@ export default function BreakingNewsScreen() {
             }
 
             // SAFE: Ensure we have an array and filter out invalid items
-            const rawItems = response.data?.data || [];
-            const newItems = Array.isArray(rawItems)
-                ? rawItems.filter(item => item && item.id && item.type)
+            const rawItems = Array.isArray((response.data as any)?.data)
+                ? (response.data as any).data
+                : Array.isArray(response.data)
+                    ? response.data
+                    : [];
+
+            // Hardening: Explicit type check before mapping
+            const newItems: NewsItem[] = Array.isArray(rawItems)
+                ? rawItems
+                    .filter((item: any) => item && typeof item.id === 'number' && typeof item.type === 'string')
+                    .map((item: any) => item as NewsItem)
                 : [];
 
             if (pageNum === 1) {
                 setNews(newItems);
             } else {
-                setNews(prev => Array.isArray(prev) ? [...prev, ...newItems] : newItems);
+                setNews(prev => {
+                    const existingIds = new Set(prev.map(i => i.id));
+                    const uniqueNewItems = newItems.filter(i => !existingIds.has(i.id));
+                    return [...prev, ...uniqueNewItems];
+                });
             }
 
             setHasMore(newItems.length === 20);
@@ -342,6 +356,16 @@ export default function BreakingNewsScreen() {
                 onEndReached={loadMore}
                 onEndReachedThreshold={0.5}
                 ListFooterComponent={loadingMore ? <ActivityIndicator style={{ padding: 20 }} color="#1976D2" /> : null}
+                // Hardening: Performance optimization props
+                removeClippedSubviews={true} // Unmount off-screen items
+                initialNumToRender={5} // Reduce initial load
+                maxToRenderPerBatch={5} // Render in small batches
+                windowSize={5} // Reduce memory usage
+                updateCellsBatchingPeriod={50}
+                getItemLayout={(data, index) => (
+                    // Approximate height calculation for smoother scrolling
+                    { length: 400, offset: 400 * index, index }
+                )}
             />
             <View style={styles.adContainer}>
                 <AdBanner />

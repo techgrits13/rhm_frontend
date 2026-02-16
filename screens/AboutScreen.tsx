@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -12,9 +12,68 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
 import { useTheme } from '../context/ThemeContext';
+import { useNavigation } from '@react-navigation/native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import AdminLoginModal from '../components/AdminLoginModal';
+
+const ADMIN_LOGIN_KEY = 'admin_logged_in';
 
 export default function AboutScreen() {
   const { colors, isDarkMode, toggleTheme } = useTheme();
+  const navigation = useNavigation<any>();
+  const [tapCount, setTapCount] = useState(0);
+  const [showAdminLogin, setShowAdminLogin] = useState(false);
+  const tapTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Check if admin is already logged in
+  useEffect(() => {
+    checkAdminLogin();
+  }, []);
+
+  const checkAdminLogin = async () => {
+    const isLoggedIn = await AsyncStorage.getItem(ADMIN_LOGIN_KEY);
+    if (isLoggedIn === 'true') {
+      // Already logged in, can navigate directly
+      console.log('Admin already logged in');
+    }
+  };
+
+  const handleIconTap = () => {
+    const newCount = tapCount + 1;
+    setTapCount(newCount);
+
+    // Clear existing timeout
+    if (tapTimeoutRef.current) {
+      clearTimeout(tapTimeoutRef.current);
+    }
+
+    // Check if reached 7 taps
+    if (newCount >= 7) {
+      setTapCount(0);
+      checkAndShowAdmin();
+    } else {
+      // Reset counter after 2 seconds of inactivity
+      tapTimeoutRef.current = setTimeout(() => {
+        setTapCount(0);
+      }, 2000);
+    }
+  };
+
+  const checkAndShowAdmin = async () => {
+    const isLoggedIn = await AsyncStorage.getItem(ADMIN_LOGIN_KEY);
+    if (isLoggedIn === 'true') {
+      // Already logged in, navigate directly
+      navigation.navigate('AdminDashboard');
+    } else {
+      // Show login modal
+      setShowAdminLogin(true);
+    }
+  };
+
+  const handleLoginSuccess = () => {
+    setShowAdminLogin(false);
+    navigation.navigate('AdminDashboard');
+  };
 
   const openLink = async (url: string) => {
     try {
@@ -177,7 +236,9 @@ export default function AboutScreen() {
       <ScrollView>
         {/* Header */}
         <View style={styles.header}>
-          <Ionicons name="home" size={60} color={colors.primary} />
+          <TouchableOpacity onPress={handleIconTap} activeOpacity={0.7}>
+            <Ionicons name="home" size={60} color={colors.primary} />
+          </TouchableOpacity>
           <Text style={styles.appName}>RHM Church App</Text>
           <Text style={styles.version}>Version 1.0.0</Text>
         </View>
@@ -301,6 +362,13 @@ export default function AboutScreen() {
           <Text style={styles.footerText}>© 2025 RHM Church</Text>
         </View>
       </ScrollView>
+
+      {/* Admin Login Modal */}
+      <AdminLoginModal
+        visible={showAdminLogin}
+        onClose={() => setShowAdminLogin(false)}
+        onLoginSuccess={handleLoginSuccess}
+      />
     </View>
   );
 }

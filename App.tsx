@@ -26,6 +26,7 @@ import RecordingsScreen from './screens/RecordingsScreen';
 import MusicListScreen from './screens/MusicListScreen';
 import MusicPlayerScreen from './screens/MusicPlayerScreen';
 import BreakingNewsScreen from './screens/BreakingNewsScreen';
+import AdminDashboardScreen from './screens/AdminDashboardScreen';
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
 const RootStack = createNativeStackNavigator();
@@ -202,6 +203,15 @@ export default function App() {
                   component={BreakingNewsScreen}
                   options={{
                     title: 'Breaking News',
+                    headerStyle: { backgroundColor: '#6200ee' },
+                    headerTintColor: '#fff',
+                  }}
+                />
+                <RootStack.Screen
+                  name="AdminDashboard"
+                  component={AdminDashboardScreen}
+                  options={{
+                    title: 'Admin Panel',
                     headerStyle: { backgroundColor: '#6200ee' },
                     headerTintColor: '#fff',
                   }}

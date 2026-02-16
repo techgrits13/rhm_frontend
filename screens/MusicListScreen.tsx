@@ -20,7 +20,7 @@ import Constants from 'expo-constants';
 // Initialize Supabase for Realtime
 const supabaseUrl = Constants.expoConfig?.extra?.supabaseUrl || '';
 const supabaseKey = Constants.expoConfig?.extra?.supabaseAnonKey || '';
-const supabase = createClient(supabaseUrl, supabaseKey);
+const supabase = supabaseUrl && supabaseKey ? createClient(supabaseUrl, supabaseKey) : null;
 
 type SortOption = 'az' | 'most_played' | 'favorites';
 
@@ -69,13 +69,15 @@ function MusicListContent() {
     useEffect(() => {
         subscribeToRealtime();
         return () => {
-            if (channelRef.current) {
+            if (channelRef.current && supabase) {
                 supabase.removeChannel(channelRef.current);
             }
         };
     }, []);
 
     const subscribeToRealtime = () => {
+        if (!supabase) return;
+
         const channel = supabase
             .channel('music_changes')
             .on('postgres_changes',
@@ -257,10 +259,16 @@ function MusicListContent() {
                     onEndReachedThreshold={0.5}
                     refreshing={refreshing}
                     onRefresh={handleRefresh}
+                    // Hardening: Performance optimization
                     removeClippedSubviews={true}
                     maxToRenderPerBatch={10}
                     windowSize={10}
-                    initialNumToRender={20}
+                    initialNumToRender={15}
+                    updateCellsBatchingPeriod={50}
+                    getItemLayout={(data, index) => (
+                        // Height 70 + Margin 10 = 80 approx
+                        { length: 80, offset: 80 * index, index }
+                    )}
                 />
             )}
             <MusicAdBanner />

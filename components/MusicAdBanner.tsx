@@ -30,7 +30,9 @@ export default function MusicAdBanner() {
                     requestNonPersonalizedAdsOnly: false,
                 }}
                 onAdFailedToLoad={(e: any) => {
-                    console.warn('Music Banner ad failed to load:', e?.message);
+                    // Hardening: Detailed logging
+                    const msg = e?.message || 'Unknown error';
+                    console.warn(`[MusicAdBanner] Failed to load: ${msg}`);
                     setAdFailed(true);
                 }}
             />

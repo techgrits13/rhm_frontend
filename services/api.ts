@@ -3,12 +3,10 @@ import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 // API Configuration
 // Use EXPO_PUBLIC_API_BASE_URL when provided.
 // Otherwise pick a sensible default based on build type: local IP for development, Render URL for production builds.
-const LOCAL_FALLBACK_URL = 'http://192.168.1.100:5000/api';
+const LOCAL_FALLBACK_URL = 'http://localhost:5000/api';
 const PRODUCTION_FALLBACK_URL = 'https://rhm-backend-2.onrender.com/api';
 
-const API_BASE_URL =
-  process.env.EXPO_PUBLIC_API_BASE_URL ||
-  (process.env.NODE_ENV === 'development' ? LOCAL_FALLBACK_URL : PRODUCTION_FALLBACK_URL);
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL || PRODUCTION_FALLBACK_URL;
 
 console.log('🌐 API Base URL:', API_BASE_URL);
 

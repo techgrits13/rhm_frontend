@@ -36,7 +36,9 @@ export default function AdBanner({ style }: AdBannerProps) {
           requestNonPersonalizedAdsOnly: false,
         }}
         onAdFailedToLoad={(e: any) => {
-          console.warn('Banner ad failed to load:', e?.message);
+          // Hardening: Detailed logging for policy violation checks
+          const msg = e?.message || 'Unknown error';
+          console.warn(`[AdBanner] Failed to load: ${msg}`);
           setAdFailed(true);
         }}
       />
