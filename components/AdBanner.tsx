@@ -12,7 +12,8 @@ export default function AdBanner({ style }: AdBannerProps) {
   const disableAds = !!(Constants?.expoConfig?.extra as any)?.disableAds;
 
   if (disableAds || !AD_UNITS.banner || adFailed) {
-    return null;
+    // Return a placeholder view to maintain layout stability
+    return <View style={[styles.container, style, { backgroundColor: 'transparent' }]} />;
   }
 
   let BannerAd: any;
@@ -23,7 +24,7 @@ export default function AdBanner({ style }: AdBannerProps) {
     BannerAd = mod.BannerAd;
     BannerAdSize = mod.BannerAdSize;
   } catch (e) {
-    return null;
+    return <View style={[styles.container, style, { backgroundColor: 'transparent' }]} />;
   }
 
   return (
@@ -50,6 +51,7 @@ const styles = StyleSheet.create({
     width: '100%',
     backgroundColor: 'transparent',
     paddingVertical: 10,
-    minHeight: 60, // Ensure minimum space for ad banner
+    height: 80, // Fixed height to prevent layout shifts
+    minHeight: 80, // Ensure minimum space for ad banner
   },
 });
