@@ -19,12 +19,13 @@ import api from '../services/api';
 import AdBanner from '../components/AdBanner';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createClient } from '@supabase/supabase-js';
+import Constants from 'expo-constants';
 
 const { width } = Dimensions.get('window');
 
-// Supabase client for realtime
-const supabaseUrl = 'https://kwaalveiuiarvldwtdbn.supabase.co';
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt3YWFsdmVpdWlhcnZsZHd0ZGJuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk2MDA4OTUsImV4cCI6MjA3NTE3Njg5NX0.IwfJMP6nc0wHg9P0p_Bzv1sDezoeqXFybk4Fu7ksvNU';
+// Supabase client for realtime - using environment variables
+const supabaseUrl = Constants.expoConfig?.extra?.supabaseUrl || '';
+const supabaseKey = Constants.expoConfig?.extra?.supabaseAnonKey || '';
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 interface NewsItem {

@@ -51,6 +51,8 @@
     ],
     "extra": {
       "disableAds": false,
+      "supabaseUrl": "https://kwaalveiuiarvldwtdbn.supabase.co",
+      "supabaseAnonKey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt3YWFsdmVpdWlhcnZsZHd0ZGJuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk2MDA4OTUsImV4cCI6MjA3NTE3Njg5NX0.IwfJMP6nc0wHg9P0p_Bzv1sDezoeqXFybk4Fu7ksvNU",
       "eas": {
         "projectId": "099536d0-ecd3-43dd-bb67-61be5f1976c1"
       }
