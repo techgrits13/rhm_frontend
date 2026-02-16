@@ -49,6 +49,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     width: '100%',
     backgroundColor: 'transparent',
-    paddingVertical: 10, // Add some spacing
+    paddingVertical: 10,
+    minHeight: 60, // Ensure minimum space for ad banner
   },
 });

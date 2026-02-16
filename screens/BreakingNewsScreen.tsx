@@ -371,9 +371,10 @@ const styles = StyleSheet.create({
         borderTopWidth: 1,
         borderTopColor: '#ccc',
         alignItems: 'center',
-        paddingVertical: 4,
+        paddingVertical: 8,
         marginTop: 10,
-        marginBottom: 32, // Lift up the ad
+        marginBottom: 32,
+        minHeight: 70,
     },
     list: { padding: 10, paddingBottom: 20 },
     card: {

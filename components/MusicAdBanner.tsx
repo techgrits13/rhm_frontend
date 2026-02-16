@@ -48,5 +48,6 @@ const styles = StyleSheet.create({
         backgroundColor: 'rgba(0,0,0,0.05)', // Subtle background to mark ad space
         borderRadius: 8,
         overflow: 'hidden',
+        minHeight: 70, // Reserve minimum space for inline banner
     },
 });

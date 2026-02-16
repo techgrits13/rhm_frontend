@@ -225,7 +225,8 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: '#e5e5e5',
     backgroundColor: '#fff',
-    paddingVertical: 4,
+    paddingVertical: 8,
+    minHeight: 70,
   },
   card: {
     backgroundColor: '#fff',
