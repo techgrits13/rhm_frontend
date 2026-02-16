@@ -322,7 +322,7 @@ export default function RadioScreen() {
       borderTopColor: '#e5e5e5',
       backgroundColor: '#fff',
       paddingVertical: 4,
-      marginTop: 12,
+      marginTop: 'auto', // Push to bottom
     },
   });
 

@@ -249,6 +249,7 @@ function MusicListContent() {
                 </View>
             ) : (
                 <FlatList
+                    style={{ flex: 1 }}
                     data={getSortedTracks()}
                     keyExtractor={(item, index) => `${item.id}-${index}`}
                     renderItem={renderItem}

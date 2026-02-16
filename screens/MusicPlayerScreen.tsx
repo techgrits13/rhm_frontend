@@ -15,7 +15,7 @@ import { Ionicons } from '@expo/vector-icons';
 import Slider from '@react-native-community/slider';
 import { useRoute, useNavigation, RouteProp } from '@react-navigation/native';
 import { musicService, MusicTrack } from '../services/musicService';
-import MusicAdBanner from '../components/MusicAdBanner'; // Adaptive banner
+import AdBanner from '../components/AdBanner'; // Standard banner
 
 // Define param list for typing
 type RootStackParamList = {
@@ -220,7 +220,7 @@ export default function MusicPlayerScreen() {
 
             {/* Adaptive Banner */}
             <View style={styles.adContainer}>
-                <MusicAdBanner />
+                <AdBanner />
             </View>
         </View>
     );

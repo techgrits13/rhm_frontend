@@ -2,7 +2,7 @@
   "expo": {
     "name": "RHM",
     "slug": "RHM",
-    "version": "1.0.1",
+    "version": "1.1.0",
     "orientation": "portrait",
     "icon": "./assets/adaptive-icon.png",
     "userInterfaceStyle": "light",
@@ -29,8 +29,16 @@
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
       "package": "com.rhm.app",
-      "versionCode": 2,
+      "versionCode": 11,
       "permissions": [
+        "INTERNET",
+        "ACCESS_NETWORK_STATE",
+        "ACCESS_WIFI_STATE",
+        "RECORD_AUDIO",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE",
+        "MODIFY_AUDIO_SETTINGS",
+        "com.google.android.gms.permission.AD_ID",
         "FOREGROUND_SERVICE",
         "WAKE_LOCK"
       ]
@@ -51,6 +59,7 @@
     ],
     "extra": {
       "disableAds": false,
+      "apiUrl": "https://rhm-backend-2.onrender.com/api",
       "supabaseUrl": "https://kwaalveiuiarvldwtdbn.supabase.co",
       "supabaseAnonKey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt3YWFsdmVpdWlhcnZsZHd0ZGJuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk2MDA4OTUsImV4cCI6MjA3NTE3Njg5NX0.IwfJMP6nc0wHg9P0p_Bzv1sDezoeqXFybk4Fu7ksvNU",
       "eas": {

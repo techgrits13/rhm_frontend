@@ -348,6 +348,7 @@ export default function BreakingNewsScreen() {
             </LinearGradient>
 
             <FlatList
+                style={{ flex: 1 }}
                 data={news}
                 renderItem={renderItem}
                 keyExtractor={item => item.id.toString()}

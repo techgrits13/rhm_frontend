@@ -86,14 +86,7 @@ export default function AboutScreen() {
     }
   };
 
-  const copyMpesaNumber = async () => {
-    try {
-      await Clipboard.setStringAsync('0719694582');
-      Alert.alert('Copied!', 'M-Pesa number 0719694582 has been copied to clipboard.');
-    } catch (error) {
-      Alert.alert('Error', 'Failed to copy number.');
-    }
-  };
+
 
   const styles = StyleSheet.create({
     container: {
@@ -194,41 +187,7 @@ export default function AboutScreen() {
       marginLeft: 12,
       flex: 1,
     },
-    mpesaContainer: {
-      backgroundColor: isDarkMode ? '#1a2e1a' : '#e8f5e9',
-      padding: 16,
-      borderRadius: 12,
-      borderWidth: 1,
-      borderColor: '#4caf50',
-    },
-    mpesaLabel: {
-      fontSize: 14,
-      color: isDarkMode ? '#81c784' : '#2e7d32',
-      marginBottom: 8,
-      fontWeight: '600',
-    },
-    mpesaNumberRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-    },
-    mpesaNumber: {
-      fontSize: 24,
-      fontWeight: 'bold',
-      color: colors.text,
-      letterSpacing: 1,
-    },
-    copyButton: {
-      backgroundColor: '#4caf50',
-      paddingHorizontal: 16,
-      paddingVertical: 8,
-      borderRadius: 20,
-    },
-    copyButtonText: {
-      color: '#fff',
-      fontWeight: 'bold',
-      fontSize: 14,
-    },
+
   });
 
   return (
@@ -317,22 +276,7 @@ export default function AboutScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Support */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Support the Developer</Text>
-          <View style={styles.mpesaContainer}>
-            <Text style={styles.mpesaLabel}>M-PESA Donation Number:</Text>
-            <View style={styles.mpesaNumberRow}>
-              <Text style={styles.mpesaNumber}>0719694582</Text>
-              <TouchableOpacity
-                style={styles.copyButton}
-                onPress={copyMpesaNumber}
-              >
-                <Text style={styles.copyButtonText}>COPY</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
+
 
         {/* Legal */}
         <View style={styles.section}>

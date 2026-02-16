@@ -1,4 +1,5 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
+import Constants from 'expo-constants';
 
 // API Configuration
 // Use EXPO_PUBLIC_API_BASE_URL when provided.
@@ -6,7 +7,7 @@ import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 const LOCAL_FALLBACK_URL = 'http://localhost:5000/api';
 const PRODUCTION_FALLBACK_URL = 'https://rhm-backend-2.onrender.com/api';
 
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL || PRODUCTION_FALLBACK_URL;
+const API_BASE_URL = Constants.expoConfig?.extra?.apiUrl || process.env.EXPO_PUBLIC_API_BASE_URL || PRODUCTION_FALLBACK_URL;
 
 console.log('🌐 API Base URL:', API_BASE_URL);
 
