@@ -8,7 +8,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 // Configure how notifications are displayed when app is in foreground
 Notifications.setNotificationHandler({
     handleNotification: async () => ({
-        shouldShowAlert: true,
+        shouldShowBanner: true,
+        shouldShowList: true,
         shouldPlaySound: true,
         shouldSetBadge: false,
     }),
@@ -121,8 +122,8 @@ export function setupNotificationListeners(
 
     // Return cleanup function
     return () => {
-        Notifications.removeNotificationSubscription(notificationListener);
-        Notifications.removeNotificationSubscription(responseListener);
+        notificationListener.remove();
+        responseListener.remove();
     };
 }
 

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Alert, Image } from 'react-native';
 import { Audio } from 'expo-av';
+import { useKeepAwake } from 'expo-keep-awake';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { radioService, SlideshowImage } from '../services/radioService';
@@ -23,6 +24,10 @@ export default function RadioScreen() {
   const [isRecording, setIsRecording] = useState(false);
   const [recordingDuration, setRecordingDuration] = useState(0);
   const [recordingTimer, setRecordingTimer] = useState<NodeJS.Timeout | null>(null);
+
+  // Keep screen awake while radio is playing
+  // This is compliant with Play Store policies as it only activates during active media playback
+  useKeepAwake('radio-playback', { suppressDeactivateWarnings: isPlaying });
 
   useEffect(() => {
     // Configure audio session for background playback

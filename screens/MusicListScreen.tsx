@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
     View,
     Text,
@@ -14,6 +14,13 @@ import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { musicService, MusicTrack } from '../services/musicService';
 import MusicAdBanner from '../components/MusicAdBanner';
 import ScreenErrorBoundary from '../components/ScreenErrorBoundary';
+import { createClient } from '@supabase/supabase-js';
+import Constants from 'expo-constants';
+
+// Initialize Supabase for Realtime
+const supabaseUrl = Constants.expoConfig?.extra?.supabaseUrl || '';
+const supabaseKey = Constants.expoConfig?.extra?.supabaseAnonKey || '';
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 type SortOption = 'az' | 'most_played' | 'favorites';
 
@@ -31,7 +38,9 @@ function MusicListContent() {
     const [playCounts, setPlayCounts] = useState<Record<string, number>>({});
     const [hasMore, setHasMore] = useState(true);
     const [offset, setOffset] = useState(0);
+    const channelRef = useRef<any>(null);
 
+    // Initial Data Load
     const loadInitialData = async () => {
         try {
             setLoading(true);
@@ -54,6 +63,39 @@ function MusicListContent() {
         } finally {
             setLoading(false);
         }
+    };
+
+    // Realtime Subscription
+    useEffect(() => {
+        subscribeToRealtime();
+        return () => {
+            if (channelRef.current) {
+                supabase.removeChannel(channelRef.current);
+            }
+        };
+    }, []);
+
+    const subscribeToRealtime = () => {
+        const channel = supabase
+            .channel('music_changes')
+            .on('postgres_changes',
+                { event: 'INSERT', schema: 'public', table: 'music' },
+                (payload: any) => {
+                    console.log('🎵 New music track!', payload);
+                    // Add new track to top of list
+                    setTracks(prev => [payload.new as MusicTrack, ...prev]);
+                }
+            )
+            .on('postgres_changes',
+                { event: 'DELETE', schema: 'public', table: 'music' },
+                (payload: any) => {
+                    console.log('🗑️ Music track deleted', payload);
+                    setTracks(prev => prev.filter(item => item.id !== payload.old.id));
+                }
+            )
+            .subscribe();
+
+        channelRef.current = channel;
     };
 
     const loadMore = async () => {
