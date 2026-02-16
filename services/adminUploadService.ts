@@ -17,6 +17,27 @@ export interface MusicUpload {
     coverUri?: string;
 }
 
+const UPLOAD_TIMEOUT = 60000; // 60 seconds
+
+/**
+ * Helper to fetch with timeout
+ */
+async function fetchWithTimeout(resource: string, options: RequestInit = {}): Promise<Response> {
+    const controller = new AbortController();
+    const id = setTimeout(() => controller.abort(), UPLOAD_TIMEOUT);
+    try {
+        const response = await fetch(resource, {
+            ...options,
+            signal: controller.signal
+        });
+        clearTimeout(id);
+        return response;
+    } catch (error) {
+        clearTimeout(id);
+        throw error;
+    }
+}
+
 /**
  * Upload Breaking News post via backend API
  */
@@ -44,7 +65,7 @@ export async function uploadBreakingNews(data: BreakingNewsUpload): Promise<{ su
             formData.append('poll_options_text', data.pollOptions.join('\n'));
         }
 
-        const response = await fetch(`${BACKEND_URL}/api/mobile-admin/breaking-news`, {
+        const response = await fetchWithTimeout(`${BACKEND_URL}/api/mobile-admin/breaking-news`, {
             method: 'POST',
             body: formData,
             headers: {
@@ -60,7 +81,8 @@ export async function uploadBreakingNews(data: BreakingNewsUpload): Promise<{ su
         return { success: true };
     } catch (error: any) {
         console.error('Upload Breaking News Error:', error);
-        return { success: false, error: error.message || 'Upload failed' };
+        const msg = error.name === 'AbortError' ? 'Upload timed out after 60s' : (error.message || 'Upload failed');
+        return { success: false, error: msg };
     }
 }
 
@@ -92,7 +114,7 @@ export async function uploadMusicTrack(data: MusicUpload): Promise<{ success: bo
             } as any);
         }
 
-        const response = await fetch(`${BACKEND_URL}/api/mobile-admin/music`, {
+        const response = await fetchWithTimeout(`${BACKEND_URL}/api/mobile-admin/music`, {
             method: 'POST',
             body: formData,
             headers: {
@@ -108,6 +130,7 @@ export async function uploadMusicTrack(data: MusicUpload): Promise<{ success: bo
         return { success: true };
     } catch (error: any) {
         console.error('Upload Music Error:', error);
-        return { success: false, error: error.message || 'Upload failed' };
+        const msg = error.name === 'AbortError' ? 'Upload timed out after 60s' : (error.message || 'Upload failed');
+        return { success: false, error: msg };
     }
 }
